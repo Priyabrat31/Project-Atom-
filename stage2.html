@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="or">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="assets/img/favicon.png">
+<title>ସ୍ତର ୨: ସୁରକ୍ଷା ବଳୟ | ପାଞ୍ଚଟି ସୁରକ୍ଷା କବାଟ</title>
+<meta name="description" content="Stage 2 of the Five Security Doors escape-room game.">
+<style>
+  /* Minimal, non-destructive base reset so the game box is centered
+     correctly when the page is opened directly in a browser
+     (previously this markup was only ever pasted inside another
+     page's container, so it had no html/body styling of its own). */
+  html, body {
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+    background: #000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+</style>
+</head>
+<body>
+<div id="game-container">
+    <style>
+        /* Global Styles */
+        #game-container {
+            width: 100%;
+            max-width: 1200px;
+            aspect-ratio: 16/9;
+            min-height: 650px;
+            margin: 0 auto;
+            /* Metal Vault Door Background */
+            background-color: #1a1a24;
+            background-image: 
+                radial-gradient(circle at center, transparent 20%, #05050a 100%),
+                linear-gradient(45deg, rgba(255,255,255,0.03) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.03) 75%, rgba(255,255,255,0.03)),
+                linear-gradient(45deg, rgba(255,255,255,0.03) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.03) 75%, rgba(255,255,255,0.03));
+            background-size: 100% 100%, 20px 20px, 20px 20px;
+            background-position: center, 0 0, 10px 10px;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #00E5FF;
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Bar */
+        #top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background: rgba(0, 0, 0, 0.8);
+            border-bottom: 2px solid #00E5FF;
+            z-index: 10;
+        }
+
+        #stage-title {
+            font-size: 1.8rem;
+            color: #00E5FF;
+            font-weight: bold;
+            text-shadow: 0 0 10px #00E5FF;
+        }
+
+        #progress-bar {
+            display: flex;
+            gap: 10px;
+        }
+
+        .progress-block {
+            width: 30px;
+            height: 10px;
+            background: #333;
+            border-radius: 5px;
+        }
+
+        .progress-block.active {
+            background: #39FF14;
+            box-shadow: 0 0 10px #39FF14;
+        }
+
+        #timer {
+            font-size: 1.8rem;
+            color: #FFD700;
+            font-weight: bold;
+            font-family: monospace;
+        }
+
+        /* Play Zone */
+        #play-zone {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Concentric Rings Area (Dropzones) */
+        #vault-rings {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            margin-bottom: 20px;
+        }
+
+        .ring-groove {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 3px dashed #555;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        /* Z-Index mapping is critical so inner rings can be dropped into */
+        #groove-1 { width: 140px; height: 140px; z-index: 4; }
+        #groove-2 { width: 220px; height: 220px; z-index: 3; }
+        #groove-3 { width: 300px; height: 300px; z-index: 2; }
+        #groove-4 { width: 380px; height: 380px; z-index: 1; }
+
+        #dz-nucleus {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 2px dashed #ff4c4c;
+            background: rgba(255,0,0,0.1);
+            z-index: 5;
+            box-sizing: border-box;
+        }
+
+        /* Draggable Pieces Box */
+        #pieces-area {
+            display: flex;
+            gap: 20px;
+            padding: 15px 30px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #00E5FF;
+            border-radius: 10px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            box-shadow: inset 0 0 15px rgba(0, 229, 255, 0.1);
+            z-index: 10;
+        }
+
+        .piece {
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+        .piece:active { cursor: grabbing; transform: scale(1.1); }
+
+        /* Draggable Ring Pieces */
+        .piece-ring {
+            width: 70px;
+            height: 70px;
+            border: 4px solid #00E5FF;
+            border-radius: 50%;
+            background: rgba(0, 229, 255, 0.15);
+            color: #00E5FF;
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+            position: relative;
+        }
+        
+        .piece-ring span {
+            font-size: 1.4rem;
+            font-weight: bold;
+            background: #05050a;
+            padding: 2px 8px;
+            border-radius: 5px;
+            border: 1px solid #00E5FF;
+            pointer-events: none; /* Prevents dropping issues on the text */
+        }
+
+        /* Nucleus Piece */
+        .piece-nucleus {
+            width: 70px;
+            height: 70px;
+            background: radial-gradient(circle, #ff4c4c, #8b0000);
+            border: 2px solid #ff0000;
+            color: white;
+            border-radius: 50%;
+            font-size: 0.9rem;
+            font-weight: bold;
+            box-shadow: 0 0 20px #ff0000;
+            text-shadow: 1px 1px 2px black;
+        }
+
+        /* Bottom Bar */
+        #bottom-bar {
+            display: flex;
+            padding: 20px 30px;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.8);
+            border-top: 2px solid #00E5FF;
+            z-index: 10;
+        }
+
+        .btn {
+            background-color: transparent;
+            color: #00E5FF;
+            font-size: 1.2rem;
+            padding: 10px 25px;
+            border: 2px solid #00E5FF;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            background-color: #00E5FF;
+            color: #0a0a0f;
+            box-shadow: 0 0 15px #00E5FF;
+        }
+
+        #hint-box {
+            flex: 1;
+            margin: 0 20px;
+            color: #FFD700;
+            font-size: 1.2rem;
+            min-height: 30px;
+            padding: 10px;
+            border-left: 3px solid transparent;
+        }
+
+        /* Success Overlay */
+        #success-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            animation: fadeIn 1s;
+        }
+
+        .success-title {
+            font-size: 3rem;
+            color: #39FF14;
+            text-shadow: 0 0 20px #39FF14;
+            margin-bottom: 10px;
+        }
+
+        .reveal-word {
+            font-size: 4rem;
+            color: #00E5FF;
+            font-weight: bold;
+            text-shadow: 0 0 30px #00E5FF;
+            margin-bottom: 30px;
+            letter-spacing: 5px;
+        }
+
+        /* Video Screen */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+    </style>
+
+    <div id="top-bar">
+        <div id="stage-title">ସ୍ତର ୨: ସୁରକ୍ଷା ବଳୟ</div>
+        <div id="progress-bar">
+            <div class="progress-block active"></div>
+            <div class="progress-block active"></div>
+            <div class="progress-block"></div>
+            <div class="progress-block"></div>
+            <div class="progress-block"></div>
+        </div>
+        <div id="timer">18:45</div> 
+    </div>
+
+    <div id="play-zone">
+        <div id="vault-rings">
+            <div class="dropzone" id="dz-nucleus" data-accept="nucleus" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+
+            <div class="ring-groove dropzone" id="groove-1" data-accept="K" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            <div class="ring-groove dropzone" id="groove-2" data-accept="L" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            <div class="ring-groove dropzone" id="groove-3" data-accept="M" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            <div class="ring-groove dropzone" id="groove-4" data-accept="N" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+        </div>
+
+        <div id="pieces-area">
+            <div class="piece piece-ring" id="drag-m" data-type="M" draggable="true" ondragstart="drag(event)"><span>M</span></div>
+            <div class="piece piece-ring" id="drag-k" data-type="K" draggable="true" ondragstart="drag(event)"><span>K</span></div>
+            <div class="piece piece-nucleus" id="drag-nuc" data-type="nucleus" draggable="true" ondragstart="drag(event)">Nucleus</div>
+            <div class="piece piece-ring" id="drag-n" data-type="N" draggable="true" ondragstart="drag(event)"><span>N</span></div>
+            <div class="piece piece-ring" id="drag-l" data-type="L" draggable="true" ondragstart="drag(event)"><span>L</span></div>
+        </div>
+    </div>
+
+    <div id="bottom-bar">
+        <button class="btn" onclick="showHint()" id="hint-btn">ସୁରାଗ</button>
+        <div id="hint-box"></div>
+    </div>
+
+    <div id="success-overlay">
+        <h2 class="success-title">ସ୍ତର ସମ୍ପୂର୍ଣ୍ଣ ହେଲା</h2>
+        <div class="reveal-word">SHELL (ସେଲ୍ / କକ୍ଷପଥ)</div>
+        <button class="btn" style="font-size: 1.5rem; padding: 15px 40px;" onclick="goToNextStage()">ପରବର୍ତ୍ତୀ ସ୍ତର</button>
+    </div>
+    <script>
+        let piecesPlaced = 0;
+        const totalPieces = 5; // 4 rings + 1 nucleus
+
+        function allowDrop(ev) {
+            ev.preventDefault();
+        }
+
+        function drag(ev) {
+            ev.dataTransfer.setData("text", ev.target.id);
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            let data = ev.dataTransfer.getData("text");
+            let piece = document.getElementById(data);
+            let dropzone = ev.target;
+
+            // If user accidentally drops on the inner text span instead of the div
+            if(dropzone.tagName === "SPAN") dropzone = dropzone.parentElement;
+
+            // Ensure dropping directly on a dropzone that isn't already filled
+            if (dropzone.classList.contains("dropzone") && !dropzone.querySelector('.piece')) {
+                if (dropzone.getAttribute("data-accept") === piece.getAttribute("data-type")) {
+                    // Correct Placement
+                    dropzone.appendChild(piece);
+                    piece.setAttribute("draggable", "false"); 
+                    piece.style.cursor = "default";
+                    
+                    // Transform the small ring piece to perfectly fit the large groove
+                    if (piece.classList.contains("piece-ring")) {
+                        piece.style.position = "absolute";
+                        piece.style.width = "100%";
+                        piece.style.height = "100%";
+                        piece.style.background = "transparent";
+                        piece.style.border = "4px solid #00E5FF";
+                        piece.style.boxShadow = "0 0 15px #00E5FF, inset 0 0 15px #00E5FF";
+                        
+                        // Move the letter (K, L, M, N) to the top center of the orbit
+                        let labelSpan = piece.querySelector('span');
+                        labelSpan.style.position = "absolute";
+                        labelSpan.style.top = "-15px";
+                        labelSpan.style.left = "50%";
+                        labelSpan.style.transform = "translateX(-50%)";
+                        labelSpan.style.margin = "0";
+
+                        dropzone.style.border = "none"; // Hide dashed groove
+                        dropzone.style.background = "transparent";
+                    }
+
+                    // Transform Nucleus to sit perfectly
+                    if (piece.classList.contains("piece-nucleus")) {
+                        piece.style.position = "absolute";
+                        piece.style.top = "50%";
+                        piece.style.left = "50%";
+                        piece.style.transform = "translate(-50%, -50%)";
+                        dropzone.style.border = "none";
+                        dropzone.style.background = "transparent";
+                    }
+
+                    piecesPlaced++;
+                    
+                    if (piecesPlaced === totalPieces) {
+                        setTimeout(triggerSuccessAnimation, 800);
+                    }
+                } else {
+                    // Wrong Placement (Error Animation)
+                    let errorColor = piece.classList.contains("piece-nucleus") ? "#ff0000" : "#FF0033";
+                    let originalColor = piece.classList.contains("piece-nucleus") ? "#ff0000" : "#00E5FF";
+                    
+                    piece.style.borderColor = errorColor;
+                    piece.style.boxShadow = `0 0 10px ${errorColor}`;
+                    if(piece.querySelector('span')) piece.querySelector('span').style.borderColor = errorColor;
+                    
+                    document.getElementById("game-container").style.animation = "shake 0.3s";
+                    
+                    setTimeout(() => {
+                        piece.style.borderColor = originalColor;
+                        piece.style.boxShadow = `0 0 10px rgba(${piece.classList.contains("piece-nucleus") ? '255,0,0' : '0,229,255'}, 0.5)`;
+                        if(piece.querySelector('span')) piece.querySelector('span').style.borderColor = originalColor;
+                        document.getElementById("game-container").style.animation = "";
+                    }, 500);
+                }
+            }
+        }
+
+        // Hint Logic
+        const hintText = "ସୁରକ୍ଷା ବଳୟ ଗୁଡ଼ିକ କେନ୍ଦ୍ରରୁ ଆରମ୍ଭ ହୁଏ। ଇଂରାଜୀ ବର୍ଣ୍ଣମାଳା କ୍ରମରେ ସଜାଡ଼ନ୍ତୁ, କିନ୍ତୁ ଏହା 'K' ରୁ ଆରମ୍ଭ ହୁଏ।";
+        let isHintTyping = false;
+
+        function showHint() {
+            if (isHintTyping) return;
+            isHintTyping = true;
+            let i = 0;
+            let textElement = document.getElementById("hint-box");
+            textElement.innerHTML = "";
+            textElement.style.borderLeft = "3px solid #FFD700";
+            
+            function type() {
+                if (i < hintText.length) {
+                    textElement.innerHTML += hintText.charAt(i);
+                    i++;
+                    setTimeout(type, 30);
+                }
+            }
+            type();
+        }
+
+        function triggerSuccessAnimation() {
+            // Flash all pieces green
+            let rings = document.querySelectorAll('.piece-ring');
+            rings.forEach(r => {
+                r.style.borderColor = "#39FF14";
+                r.style.boxShadow = "0 0 20px #39FF14, inset 0 0 10px #39FF14";
+                r.querySelector('span').style.color = "#39FF14";
+                r.querySelector('span').style.borderColor = "#39FF14";
+            });
+
+            // Show Success Overlay
+            setTimeout(() => {
+                document.getElementById('success-overlay').style.display = 'flex';
+            }, 1000);
+        }
+
+        function goToNextStage() {
+            // PASTE THE LINK TO STAGE 3 PAGE IN THE STRING BELOW
+            window.location.href = "stage3.html";
+        }
+
+        let timeLeft = (18 * 60) + 45; 
+        setInterval(() => {
+            if(timeLeft > 0) timeLeft--;
+            let m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            let s = (timeLeft % 60).toString().padStart(2, '0');
+            document.getElementById('timer').innerText = m + ":" + s;
+        }, 1000);
+    </script>
+</div>
+
+</body>
+</html>

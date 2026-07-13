@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="or">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="assets/img/favicon.png">
+<title>ସ୍ତର ୩: କ୍ଷମତା କୋଡ୍ | ପାଞ୍ଚଟି ସୁରକ୍ଷା କବାଟ</title>
+<meta name="description" content="Stage 3 of the Five Security Doors escape-room game.">
+<style>
+  /* Minimal, non-destructive base reset so the game box is centered
+     correctly when the page is opened directly in a browser
+     (previously this markup was only ever pasted inside another
+     page's container, so it had no html/body styling of its own). */
+  html, body {
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+    background: #000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+</style>
+</head>
+<body>
+<div id="game-container">
+    <style>
+        /* Global Styles */
+        #game-container {
+            width: 100%;
+            max-width: 1200px;
+            aspect-ratio: 16/9;
+            min-height: 650px;
+            margin: 0 auto;
+            background-color: #05050a;
+            background-image: 
+                radial-gradient(circle at center, transparent 10%, #000000 100%),
+                linear-gradient(rgba(0, 229, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 229, 255, 0.05) 1px, transparent 1px);
+            background-size: 100% 100%, 30px 30px, 30px 30px;
+            background-position: center;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #00E5FF;
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Bar */
+        #top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background: rgba(0, 0, 0, 0.9);
+            border-bottom: 2px solid #00E5FF;
+            z-index: 10;
+        }
+
+        #stage-title {
+            font-size: 1.8rem;
+            color: #00E5FF;
+            font-weight: bold;
+            text-shadow: 0 0 10px #00E5FF;
+        }
+
+        #progress-bar {
+            display: flex;
+            gap: 10px;
+        }
+
+        .progress-block {
+            width: 30px;
+            height: 10px;
+            background: #333;
+            border-radius: 5px;
+        }
+
+        .progress-block.active {
+            background: #39FF14;
+            box-shadow: 0 0 10px #39FF14;
+        }
+
+        #timer {
+            font-size: 1.8rem;
+            color: #FFD700;
+            font-weight: bold;
+            font-family: monospace;
+        }
+
+        /* Play Zone Layout */
+        #play-zone {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 50px;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* Hologram Formula */
+        #hologram-container {
+            position: absolute;
+            top: 20px;
+            left: 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        #hologram-text {
+            font-size: 4rem;
+            color: #00E5FF;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            text-shadow: 0 0 10px #00E5FF, 0 0 20px #00E5FF, 0 0 40px rgba(0, 229, 255, 0.5);
+            background: rgba(0, 229, 255, 0.1);
+            padding: 20px 40px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            box-shadow: inset 0 0 20px rgba(0, 229, 255, 0.2);
+        }
+
+        #hologram-base {
+            width: 100px;
+            height: 20px;
+            background: radial-gradient(ellipse, #00E5FF 0%, transparent 70%);
+            opacity: 0.5;
+            margin-top: 10px;
+            filter: blur(5px);
+        }
+
+        /* Computer Terminal Screen */
+        #terminal-screen {
+            background: rgba(0, 15, 5, 0.85);
+            border: 3px solid #39FF14;
+            border-radius: 10px;
+            width: 420px;
+            height: 380px;
+            padding: 20px 30px;
+            box-shadow: 0 0 30px rgba(57, 255, 20, 0.2), inset 0 0 20px rgba(57, 255, 20, 0.1);
+            font-family: 'Courier New', Courier, monospace;
+            color: #39FF14;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Terminal Header (Added based on request) */
+        .terminal-header {
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #00E5FF;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px dashed rgba(57, 255, 20, 0.5);
+            text-shadow: 0 0 5px #00E5FF;
+            letter-spacing: 2px;
+        }
+
+        /* Scanline effect for terminal */
+        #terminal-screen::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 4px, 3px 100%;
+            pointer-events: none;
+        }
+
+        .data-line {
+            font-size: 1.6rem;
+            margin-bottom: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .input-box {
+            background: #000;
+            border: 2px solid #333;
+            color: #FF0033;
+            width: 70px;
+            height: 35px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 15px;
+            font-size: 1.5rem;
+            transition: border-color 0.3s;
+        }
+
+        .input-box.active {
+            border-color: #00E5FF;
+            box-shadow: 0 0 10px #00E5FF;
+            color: #00E5FF;
+            animation: pulse-border 1.5s infinite;
+        }
+
+        /* Keypad Interface */
+        #keypad-container {
+            background: #111;
+            border: 2px solid #555;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            z-index: 5;
+        }
+
+        #keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 80px);
+            gap: 10px;
+        }
+
+        .key-btn {
+            background: #222;
+            border: 1px solid #444;
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: bold;
+            padding: 15px 0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .key-btn:hover { background: #333; border-color: #00E5FF; }
+        .key-btn:active { background: #00E5FF; color: #000; }
+
+        .key-clear { color: #FF0033; }
+        .key-enter { grid-column: span 3; background: #004d00; color: #39FF14; border-color: #39FF14; }
+        .key-enter:hover { background: #006600; box-shadow: 0 0 10px #39FF14; }
+
+        /* Error Message */
+        #error-msg {
+            color: #FF0033;
+            font-size: 1.4rem;
+            text-align: center;
+            margin-top: 15px;
+            height: 24px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            text-shadow: 0 0 5px currentColor;
+            font-weight: bold;
+        }
+
+        /* Bottom Bar */
+        #bottom-bar {
+            display: flex;
+            padding: 20px 30px;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.9);
+            border-top: 2px solid #00E5FF;
+            z-index: 10;
+        }
+
+        .btn {
+            background-color: transparent;
+            color: #00E5FF;
+            font-size: 1.2rem;
+            padding: 10px 25px;
+            border: 2px solid #00E5FF;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .btn:hover { background-color: #00E5FF; color: #0a0a0f; box-shadow: 0 0 15px #00E5FF; }
+
+        #hint-box {
+            flex: 1;
+            margin: 0 20px;
+            color: #FFD700;
+            font-size: 1.1rem;
+            min-height: 30px;
+            padding: 10px;
+            border-left: 3px solid transparent;
+        }
+
+        /* Success Overlay */
+        #success-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            animation: fadeIn 1s;
+        }
+
+        .success-title { font-size: 3rem; color: #39FF14; text-shadow: 0 0 20px #39FF14; margin-bottom: 20px; }
+        .reveal-word { font-size: 4rem; color: #39FF14; font-weight: bold; text-shadow: 0 0 30px #39FF14; margin-bottom: 30px; }
+
+        /* Video Screen */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+        @keyframes pulse-border { 0% { box-shadow: 0 0 5px #00E5FF; } 50% { box-shadow: 0 0 15px #00E5FF; } 100% { box-shadow: 0 0 5px #00E5FF; } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } }
+    </style>
+
+    <div id="top-bar">
+        <div id="stage-title">ସ୍ତର ୩: କ୍ଷମତା କୋଡ୍</div>
+        <div id="progress-bar">
+            <div class="progress-block active"></div>
+            <div class="progress-block active"></div>
+            <div class="progress-block active"></div>
+            <div class="progress-block"></div>
+            <div class="progress-block"></div>
+        </div>
+        <div id="timer">15:30</div> 
+    </div>
+
+    <div id="play-zone">
+        
+        <div id="hologram-container">
+            <div id="hologram-text">2n<sup>2</sup></div>
+            <div id="hologram-base"></div>
+        </div>
+
+        <div id="terminal-screen">
+            <div class="terminal-header">ଇଲେକ୍ଟ୍ରନ୍ ସଂଖ୍ୟା (Electron Number)</div>
+            <div class="data-line">[ K (n=1) : 02 ]</div>
+            <div class="data-line">[ L (n=2) : 08 ]</div>
+            <div class="data-line">
+                [ M (n=3) : <div class="input-box active" id="input-m" onclick="setActive('m')"></div> ]
+            </div>
+            <div class="data-line">
+                [ N (n=4) : <div class="input-box" id="input-n" onclick="setActive('n')"></div> ]
+            </div>
+            <div id="error-msg">ERROR: ଭୁଲ୍ ପାସୱାର୍ଡ</div>
+        </div>
+
+        <div id="keypad-container">
+            <div id="keypad">
+                <button class="key-btn" onclick="pressKey('1')">1</button>
+                <button class="key-btn" onclick="pressKey('2')">2</button>
+                <button class="key-btn" onclick="pressKey('3')">3</button>
+                <button class="key-btn" onclick="pressKey('4')">4</button>
+                <button class="key-btn" onclick="pressKey('5')">5</button>
+                <button class="key-btn" onclick="pressKey('6')">6</button>
+                <button class="key-btn" onclick="pressKey('7')">7</button>
+                <button class="key-btn" onclick="pressKey('8')">8</button>
+                <button class="key-btn" onclick="pressKey('9')">9</button>
+                <button class="key-btn key-clear" onclick="clearKey()">C</button>
+                <button class="key-btn" onclick="pressKey('0')">0</button>
+                <button class="key-btn" onclick="toggleActive()">⇄</button>
+                <button class="key-btn key-enter" onclick="checkCode()">ENTER</button>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="bottom-bar">
+        <button class="btn" onclick="showHint()" id="hint-btn">ସୁରାଗ</button>
+        <div id="hint-box"></div>
+    </div>
+
+    <div id="success-overlay">
+        <h2 class="success-title">ସ୍ତର ସମ୍ପୂର୍ଣ୍ଣ ହେଲା</h2>
+        <div class="reveal-word">ପ୍ରବେଶ ଅନୁମୋଦିତ (ACCESS GRANTED)</div>
+        <button class="btn" style="font-size: 1.5rem; padding: 15px 40px; border-color: #39FF14; color: #39FF14;" onclick="goToNextStage()">ପରବର୍ତ୍ତୀ ସ୍ତର</button>
+    </div>
+    <script>
+        let activeInput = 'm'; 
+
+        function setActive(box) {
+            activeInput = box;
+            document.getElementById('input-m').classList.remove('active');
+            document.getElementById('input-n').classList.remove('active');
+            document.getElementById('input-' + box).classList.add('active');
+        }
+
+        function toggleActive() {
+            if (activeInput === 'm') setActive('n');
+            else setActive('m');
+        }
+
+        function pressKey(num) {
+            let box = document.getElementById('input-' + activeInput);
+            if (box.innerText.length < 2) {
+                box.innerText += num;
+            }
+            if (activeInput === 'm' && box.innerText.length === 2) {
+                setTimeout(() => setActive('n'), 200);
+            }
+        }
+
+        function clearKey() {
+            document.getElementById('input-' + activeInput).innerText = '';
+        }
+
+        function checkCode() {
+            let valM = document.getElementById('input-m').innerText;
+            let valN = document.getElementById('input-n').innerText;
+            let errorMsg = document.getElementById('error-msg');
+            let terminal = document.getElementById('terminal-screen');
+
+            // --- HIDDEN EASTER EGG LOGIC ---
+            if (valM === valN && valM !== '') {
+                let easterEggMessage = "";
+                switch(valM) {
+                    case '18': easterEggMessage = "ଗାଲୁଆ ପ୍ରିୟଦର୍ଶନ"; break; // Correct answer for M is 18, but if N is also 18, it triggers this.
+                    case '69': easterEggMessage = "ଗାଲୁଆ ଉମେଶ"; break;
+                    case '90': easterEggMessage = "ଗାଲୁଆ ଅମ୍ଲାନ"; break;
+                    case '44': easterEggMessage = "ଗାଲୁଆ ସୌମ୍ୟ"; break;
+                    case '85': easterEggMessage = "ଗାଲୁଆ ରାଜାରାମ"; break;
+                    case '59': easterEggMessage = "ଗାଲୁଆ ସ୍ମୃତି"; break;
+                    case '06': easterEggMessage = "ଗାଲୁଆ ସୁଶୀଲ"; break;
+                }
+
+                if (easterEggMessage !== "") {
+                    // Show Easter Egg
+                    errorMsg.innerText = easterEggMessage;
+                    errorMsg.style.color = "#FFD700"; // Gold Color
+                    errorMsg.style.opacity = '1';
+                    terminal.style.borderColor = "#FFD700";
+                    terminal.style.boxShadow = "0 0 30px rgba(255, 215, 0, 0.5)";
+                    terminal.style.animation = "shake 0.4s";
+                    
+                    setTimeout(() => {
+                        errorMsg.style.opacity = '0';
+                        terminal.style.borderColor = "#39FF14";
+                        terminal.style.boxShadow = "0 0 30px rgba(57,255,20,0.2)";
+                        terminal.style.animation = "";
+                        document.getElementById('input-m').innerText = '';
+                        document.getElementById('input-n').innerText = '';
+                        setActive('m');
+                        
+                        // Reset the text back to standard error message after it fades out
+                        setTimeout(() => {
+                            errorMsg.innerText = "ERROR: ଭୁଲ୍ ପାସୱାର୍ଡ";
+                            errorMsg.style.color = "#FF0033";
+                        }, 300);
+                    }, 2500);
+                    
+                    return; // Stop the regular check code logic here
+                }
+            }
+            // --- END OF EASTER EGG LOGIC ---
+
+
+            // The correct passcode calculation: M = 2*(3^2) = 18, N = 2*(4^2) = 32
+            if (valM === '18' && valN === '32') {
+                // Success
+                errorMsg.style.opacity = '0';
+                terminal.style.borderColor = "#39FF14";
+                terminal.style.boxShadow = "0 0 30px rgba(57,255,20,0.5)";
+                document.getElementById('input-m').style.color = "#39FF14";
+                document.getElementById('input-n').style.color = "#39FF14";
+                
+                setTimeout(() => {
+                    document.getElementById('success-overlay').style.display = 'flex';
+                }, 1000);
+            } else {
+                // Normal Error
+                errorMsg.innerText = "ERROR: ଭୁଲ୍ ପାସୱାର୍ଡ";
+                errorMsg.style.color = "#FF0033";
+                errorMsg.style.opacity = '1';
+                terminal.style.borderColor = "#FF0033";
+                terminal.style.boxShadow = "0 0 30px rgba(255,0,51,0.5)";
+                terminal.style.animation = "shake 0.4s";
+                
+                setTimeout(() => {
+                    errorMsg.style.opacity = '0';
+                    terminal.style.borderColor = "#39FF14";
+                    terminal.style.boxShadow = "0 0 30px rgba(57,255,20,0.2)";
+                    terminal.style.animation = "";
+                    document.getElementById('input-m').innerText = '';
+                    document.getElementById('input-n').innerText = '';
+                    setActive('m');
+                }, 1500);
+            }
+        }
+
+        // Hint Logic
+        const hintText = "ସୂତ୍ରଟି ହେଉଛି 2n²। 'n' ହେଉଛି ବଳୟର କ୍ରମିକ ସଂଖ୍ୟା। ଯଦି M ତୃତୀୟ ବଳୟ, ତେବେ ଏହାର ସର୍ବାଧିକ କ୍ଷମତା କେତେ ହେବ ହିସାବ କରନ୍ତୁ।";
+        let isHintTyping = false;
+
+        function showHint() {
+            if (isHintTyping) return;
+            isHintTyping = true;
+            let i = 0;
+            let textElement = document.getElementById("hint-box");
+            textElement.innerHTML = "";
+            textElement.style.borderLeft = "3px solid #FFD700";
+            
+            function type() {
+                if (i < hintText.length) {
+                    textElement.innerHTML += hintText.charAt(i);
+                    i++;
+                    setTimeout(type, 30);
+                }
+            }
+            type();
+        }
+
+        function goToNextStage() {
+            window.location.href = "stage4.html";
+        }
+
+        let timeLeft = (15 * 60) + 30; 
+        setInterval(() => {
+            if(timeLeft > 0) timeLeft--;
+            let m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            let s = (timeLeft % 60).toString().padStart(2, '0');
+            document.getElementById('timer').innerText = m + ":" + s;
+        }, 1000);
+    </script>
+</div>
+
+</body>
+</html>

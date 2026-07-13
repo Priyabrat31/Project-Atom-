@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="or">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="assets/img/favicon.png">
+<title>ସ୍ତର ୫: ଚୂଡ଼ାନ୍ତ ସୁରକ୍ଷା | ପାଞ୍ଚଟି ସୁରକ୍ଷା କବାଟ</title>
+<meta name="description" content="Stage 5 of the Five Security Doors escape-room game.">
+<style>
+  /* Minimal, non-destructive base reset so the game box is centered
+     correctly when the page is opened directly in a browser
+     (previously this markup was only ever pasted inside another
+     page's container, so it had no html/body styling of its own). */
+  html, body {
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+    background: #000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+</style>
+</head>
+<body>
+<div id="game-container">
+    <style>
+        /* Global Styles */
+        #game-container {
+            width: 100%;
+            max-width: 1200px;
+            aspect-ratio: 16/9;
+            min-height: 650px;
+            margin: 0 auto;
+            background-color: #050101; /* Darker, unstable red tint */
+            background-image: 
+                radial-gradient(circle at center, rgba(255, 0, 51, 0.1) 10%, #000000 100%),
+                linear-gradient(rgba(255, 0, 51, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 0, 51, 0.05) 1px, transparent 1px);
+            background-size: 100% 100%, 30px 30px, 30px 30px;
+            background-position: center;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #FF0033;
+            box-shadow: 0 0 30px rgba(255, 0, 51, 0.3);
+            display: flex;
+            flex-direction: column;
+            transition: all 1s ease;
+        }
+
+        /* Top Bar */
+        #top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background: rgba(0, 0, 0, 0.9);
+            border-bottom: 2px solid #FF0033;
+            z-index: 10;
+            transition: border-color 1s ease;
+        }
+
+        #stage-title {
+            font-size: 1.8rem;
+            color: #FF0033;
+            font-weight: bold;
+            text-shadow: 0 0 10px #FF0033;
+            transition: color 1s ease, text-shadow 1s ease;
+        }
+
+        #progress-bar { display: flex; gap: 10px; }
+        .progress-block { width: 30px; height: 10px; background: #39FF14; border-radius: 5px; box-shadow: 0 0 10px #39FF14; }
+        .progress-block:last-child { background: #FF0033; box-shadow: 0 0 10px #FF0033; animation: blink 1s infinite; }
+
+        #timer { font-size: 1.8rem; color: #FF0033; font-weight: bold; font-family: monospace; animation: blink 1s infinite; }
+
+        /* Play Zone Layout */
+        #play-zone {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* Central Receptacle */
+        #mainframe-receptacle {
+            width: 350px;
+            height: 350px;
+            border: 3px dashed #FF0033;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: rgba(255, 0, 51, 0.05);
+            box-shadow: inset 0 0 30px rgba(255, 0, 51, 0.2);
+            transition: all 1s ease;
+        }
+
+        /* Draggable Jigsaw Pieces Box */
+        #pieces-area {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid #FF0033;
+            border-radius: 10px;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 15px rgba(255, 0, 51, 0.1);
+        }
+
+        /* The Pieces */
+        .puzzle-piece {
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+            position: relative;
+        }
+        .puzzle-piece:active { cursor: grabbing; transform: scale(1.05); }
+
+        /* Core Piece (Nucleus + K Shell) */
+        #piece-core {
+            width: 100px;
+            height: 100px;
+            border: 2px solid rgba(0, 229, 255, 0.8);
+            border-radius: 50%;
+            background: radial-gradient(circle, #ff4c4c 0%, transparent 40%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        /* K-shell electrons fixed on core piece */
+        .e-fixed { position: absolute; width: 14px; height: 14px; background: #00E5FF; border-radius: 50%; box-shadow: 0 0 8px #00E5FF; }
+        #piece-core .e-fixed:nth-child(1) { top: -7px; left: 43px; }
+        #piece-core .e-fixed:nth-child(2) { bottom: -7px; left: 43px; }
+
+        /* Outer Shell Piece (L Shell with 7 electrons) */
+        #piece-outer {
+            width: 160px;
+            height: 160px;
+            border: 3px solid rgba(0, 229, 255, 0.8);
+            border-radius: 50%;
+            position: relative;
+        }
+        /* Placing 7 electrons around the ring */
+        .pos-1 { top: -7px; left: 73px; }
+        .pos-2 { top: 15px; left: 130px; }
+        .pos-3 { top: 73px; right: -7px; }
+        .pos-4 { bottom: 15px; left: 130px; }
+        .pos-5 { bottom: -7px; left: 73px; }
+        .pos-6 { bottom: 15px; left: 15px; }
+        .pos-7 { top: 73px; left: -7px; }
+        
+        /* The empty slot */
+        #empty-slot {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px dashed #FF0033;
+            border-radius: 50%;
+            top: 15px; left: 15px; /* Position 8 */
+            background: rgba(255,0,51,0.2);
+            box-shadow: 0 0 10px #FF0033;
+            animation: blink 0.8s infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+        }
+
+        /* Final Electron Piece */
+        #piece-electron {
+            width: 20px;
+            height: 20px;
+            background: #00E5FF;
+            border-radius: 50%;
+            box-shadow: 0 0 15px #00E5FF;
+        }
+
+        /* Bottom Bar */
+        #bottom-bar {
+            display: flex;
+            padding: 20px 30px;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.9);
+            border-top: 2px solid #FF0033;
+            z-index: 10;
+            transition: border-color 1s ease;
+        }
+
+        .btn { background-color: transparent; color: #00E5FF; font-size: 1.2rem; padding: 10px 25px; border: 2px solid #00E5FF; border-radius: 30px; cursor: pointer; transition: all 0.3s ease; text-transform: uppercase; font-weight: bold; }
+        .btn:hover { background-color: #00E5FF; color: #0a0a0f; box-shadow: 0 0 15px #00E5FF; }
+
+        #hint-box { flex: 1; margin: 0 20px; color: #FFD700; font-size: 1.1rem; min-height: 30px; padding: 10px; border-left: 3px solid transparent; }
+
+        /* Success Overlay */
+        #success-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; animation: fadeIn 1s; }
+        .success-title { font-size: 3rem; color: #39FF14; text-shadow: 0 0 20px #39FF14; margin-bottom: 20px; }
+        .reveal-word { font-size: 4rem; color: #00E5FF; font-weight: bold; text-shadow: 0 0 30px #00E5FF; margin-bottom: 30px; }
+
+        /* Video Screen */
+/* Animations */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        @keyframes shake-erratic { 
+            0%, 100% { transform: translate(0, 0) rotate(0deg); } 
+            25% { transform: translate(-3px, 2px) rotate(-1deg); } 
+            50% { transform: translate(3px, -2px) rotate(1deg); } 
+            75% { transform: translate(-2px, -3px) rotate(0deg); } 
+        }
+        @keyframes rotate-perfect {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .unstable { animation: shake-erratic 0.2s infinite; }
+        .stable { animation: rotate-perfect 4s linear infinite; }
+    </style>
+
+    <div id="top-bar">
+        <div id="stage-title">ସ୍ତର ୫: ଚୂଡ଼ାନ୍ତ ସୁରକ୍ଷା</div>
+        <div id="progress-bar">
+            <div class="progress-block active"></div>
+            <div class="progress-block active"></div>
+            <div class="progress-block active"></div>
+            <div class="progress-block active"></div>
+            <div class="progress-block active" id="final-block"></div>
+        </div>
+        <div id="timer">05:45</div> 
+    </div>
+
+    <div id="play-zone">
+        
+        <div id="mainframe-receptacle" data-accept="core" ondrop="drop(event)" ondragover="allowDrop(event)">
+            </div>
+
+        <div id="pieces-area">
+            <div class="puzzle-piece" id="piece-core" data-type="core" draggable="true" ondragstart="drag(event)">
+                <div class="e-fixed"></div>
+                <div class="e-fixed"></div>
+            </div>
+            
+            <div class="puzzle-piece" id="piece-outer" data-type="outer" draggable="true" ondragstart="drag(event)">
+                <div class="e-fixed pos-1"></div><div class="e-fixed pos-2"></div><div class="e-fixed pos-3"></div>
+                <div class="e-fixed pos-4"></div><div class="e-fixed pos-5"></div><div class="e-fixed pos-6"></div>
+                <div class="e-fixed pos-7"></div>
+                <div id="empty-slot" data-accept="electron" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            </div>
+
+            <div class="puzzle-piece" id="piece-electron" data-type="electron" draggable="true" ondragstart="drag(event)"></div>
+        </div>
+
+    </div>
+
+    <div id="bottom-bar">
+        <button class="btn" onclick="showHint()" id="hint-btn">ସୁରାଗ</button>
+        <div id="hint-box"></div>
+    </div>
+
+    <div id="success-overlay">
+        <h2 class="success-title">ସବୁଠାରୁ ବଡ଼ ରହସ୍ୟ ସମାଧାନ ହେଲା!</h2>
+        <div class="reveal-word">ଅଷ୍ଟକ ନିୟମ<br>(OCTET RULE)</div>
+        <button class="btn" style="font-size: 1.5rem; padding: 15px 40px; border-color: #39FF14; color: #39FF14;" onclick="goToEnding()">ଚୂଡ଼ାନ୍ତ ଫଳାଫଳ ଦେଖନ୍ତୁ</button>
+    </div>
+    <script>
+        let state = 0; // 0: Need Core, 1: Need Outer, 2: Need Electron
+
+        function allowDrop(ev) { ev.preventDefault(); }
+
+        function drag(ev) {
+            ev.dataTransfer.setData("text", ev.target.id);
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            let data = ev.dataTransfer.getData("text");
+            let piece = document.getElementById(data);
+            let target = ev.target;
+
+            // Logic 1: Dropping Core into Receptacle
+            if (state === 0 && target.id === 'mainframe-receptacle' && piece.id === 'piece-core') {
+                target.appendChild(piece);
+                piece.style.position = "absolute";
+                piece.setAttribute("draggable", "false");
+                piece.style.cursor = "default";
+                piece.classList.add('unstable');
+                
+                // Change receptacle to accept outer ring
+                target.setAttribute('data-accept', 'outer');
+                state = 1;
+            }
+            // Logic 2: Dropping Outer Ring into Receptacle (over the core)
+            else if (state === 1 && target.id === 'mainframe-receptacle' && piece.id === 'piece-outer') {
+                target.appendChild(piece);
+                piece.style.position = "absolute";
+                piece.style.width = "250px"; // Make it bigger when placed
+                piece.style.height = "250px";
+                piece.setAttribute("draggable", "false");
+                piece.style.cursor = "default";
+                
+                // Adjust electron positions for the larger 250px ring dynamically
+                let electrons = piece.querySelectorAll('.e-fixed');
+                let r = 125; // radius
+                let angleOffset = -Math.PI / 2; // Start top
+                for(let i=0; i<7; i++) {
+                    let angle = angleOffset + (i * (Math.PI / 4)); // 45 degrees
+                    let x = r + r * Math.cos(angle) - 7; // -7 to center the 14px electron
+                    let y = r + r * Math.sin(angle) - 7;
+                    electrons[i].style.top = y + "px";
+                    electrons[i].style.left = x + "px";
+                }
+                // Adjust empty slot position
+                let slot = document.getElementById('empty-slot');
+                let angle = angleOffset + (7 * (Math.PI / 4));
+                slot.style.top = (r + r * Math.sin(angle) - 10) + "px"; // -10 to center 20px slot
+                slot.style.left = (r + r * Math.cos(angle) - 10) + "px";
+                
+                piece.classList.add('unstable');
+                state = 2;
+            }
+            // Logic 3: Dropping Final Electron into the Empty Slot
+            else if (state === 2 && target.id === 'empty-slot' && piece.id === 'piece-electron') {
+                target.appendChild(piece);
+                piece.style.position = "absolute";
+                piece.style.top = "0";
+                piece.style.left = "0";
+                piece.setAttribute("draggable", "false");
+                piece.style.cursor = "default";
+                piece.style.boxShadow = "none";
+                
+                target.style.border = "none";
+                target.style.background = "transparent";
+                target.style.animation = "none";
+                
+                triggerStabilization();
+            }
+            else {
+                // Wrong drop logic
+                document.getElementById("game-container").style.animation = "shake-erratic 0.3s";
+                setTimeout(() => { document.getElementById("game-container").style.animation = ""; }, 300);
+            }
+        }
+
+        function triggerStabilization() {
+            let container = document.getElementById('game-container');
+            let topBar = document.getElementById('top-bar');
+            let bottomBar = document.getElementById('bottom-bar');
+            let timer = document.getElementById('timer');
+            let block = document.getElementById('final-block');
+            let receptacle = document.getElementById('mainframe-receptacle');
+
+            // Remove erratic animations
+            document.getElementById('piece-core').classList.remove('unstable');
+            document.getElementById('piece-outer').classList.remove('unstable');
+
+            // Flash White/Cyan to indicate stability achieved
+            container.style.backgroundColor = "#FFFFFF";
+            setTimeout(() => {
+                // Transition to Stable Cool Cyan colors
+                container.style.backgroundColor = "#001a1a";
+                container.style.borderColor = "#00E5FF";
+                container.style.boxShadow = "0 0 30px rgba(0, 229, 255, 0.3)";
+                
+                topBar.style.borderColor = "#00E5FF";
+                bottomBar.style.borderColor = "#00E5FF";
+                document.getElementById('stage-title').style.color = "#00E5FF";
+                document.getElementById('stage-title').style.textShadow = "0 0 10px #00E5FF";
+                
+                receptacle.style.borderColor = "#00E5FF";
+                receptacle.style.background = "rgba(0, 229, 255, 0.05)";
+                receptacle.style.boxShadow = "inset 0 0 30px rgba(0, 229, 255, 0.2)";
+
+                timer.style.color = "#39FF14";
+                timer.style.animation = "none"; // Stop blinking
+
+                block.style.background = "#39FF14";
+                block.style.boxShadow = "0 0 10px #39FF14";
+                block.style.animation = "none";
+
+                // Perfect, calm rotation
+                receptacle.classList.add('stable');
+                document.getElementById('pieces-area').style.display = 'none';
+
+            }, 200);
+
+            // Show Success Screen
+            setTimeout(() => {
+                document.getElementById('success-overlay').style.display = 'flex';
+            }, 3500);
+        }
+
+        // Hint Logic
+        const hintText = "ମେନ୍‌ଫ୍ରେମ୍ ଅସ୍ଥିର ଅଛି! ବାହ୍ୟ କକ୍ଷରେ ସର୍ବଦା ୮ ଟି ଶକ୍ତି ବିନ୍ଦୁ ରହିଲେ ହିଁ ସିଷ୍ଟମ୍ ସମ୍ପୂର୍ଣ୍ଣ ସ୍ଥିର ହୁଏ। ଶେଷ ଖଣ୍ଡଟିକୁ ଯୋଡ଼ନ୍ତୁ।";
+        let isHintTyping = false;
+
+        function showHint() {
+            if (isHintTyping) return;
+            isHintTyping = true;
+            let i = 0;
+            let textElement = document.getElementById("hint-box");
+            textElement.innerHTML = "";
+            textElement.style.borderLeft = "3px solid #FFD700";
+            
+            function type() {
+                if (i < hintText.length) {
+                    textElement.innerHTML += hintText.charAt(i);
+                    i++;
+                    setTimeout(type, 30);
+                }
+            }
+            type();
+        }
+
+        function goToEnding() {
+            // PASTE THE LINK TO THE FINAL ENDING PAGE IN THE STRING BELOW
+            window.location.href = "ending.html";
+        }
+
+        let timeLeft = (5 * 60) + 45; 
+        setInterval(() => {
+            if(timeLeft > 0 && state < 2) timeLeft--; // Stop timer when solved
+            let m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            let s = (timeLeft % 60).toString().padStart(2, '0');
+            document.getElementById('timer').innerText = m + ":" + s;
+        }, 1000);
+    </script>
+</div>
+
+</body>
+</html>

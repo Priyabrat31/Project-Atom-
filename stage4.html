@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="or">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="assets/img/favicon.png">
+<title>ସ୍ତର ୪: ସୁରକ୍ଷା ବ୍ୟବସ୍ଥା | ପାଞ୍ଚଟି ସୁରକ୍ଷା କବାଟ</title>
+<meta name="description" content="Stage 4 of the Five Security Doors escape-room game.">
+<style>
+  /* Minimal, non-destructive base reset so the game box is centered
+     correctly when the page is opened directly in a browser
+     (previously this markup was only ever pasted inside another
+     page's container, so it had no html/body styling of its own). */
+  html, body {
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+    background: #000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+</style>
+</head>
+<body>
+<div id="game-container">
+    <style>
+        /* Global Styles */
+        #game-container {
+            width: 100%;
+            max-width: 1200px;
+            aspect-ratio: 16/9;
+            min-height: 650px;
+            margin: 0 auto;
+            background-color: #05050a;
+            background-image: 
+                radial-gradient(circle at center, transparent 10%, #000000 100%),
+                linear-gradient(rgba(0, 229, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 229, 255, 0.05) 1px, transparent 1px);
+            background-size: 100% 100%, 30px 30px, 30px 30px;
+            background-position: center;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #00E5FF;
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Bar */
+        #top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background: rgba(0, 0, 0, 0.9);
+            border-bottom: 2px solid #00E5FF;
+            z-index: 10;
+        }
+
+        #stage-title {
+            font-size: 1.8rem;
+            color: #00E5FF;
+            font-weight: bold;
+            text-shadow: 0 0 10px #00E5FF;
+        }
+
+        #progress-bar {
+            display: flex;
+            gap: 10px;
+        }
+
+        .progress-block { width: 30px; height: 10px; background: #333; border-radius: 5px; }
+        .progress-block.active { background: #39FF14; box-shadow: 0 0 10px #39FF14; }
+
+        #timer { font-size: 1.8rem; color: #FFD700; font-weight: bold; font-family: monospace; }
+
+        /* Play Zone Layout */
+        #play-zone {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Sticky Note (Previous Data) */
+        #sticky-note {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            background: rgba(255, 215, 0, 0.15);
+            border: 1px solid #FFD700;
+            padding: 15px 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+            color: #FFD700;
+            font-family: monospace;
+            font-size: 1.2rem;
+            transform: rotate(-2deg);
+        }
+
+        #sticky-note h4 { margin: 0 0 10px 0; font-family: 'Segoe UI', sans-serif; font-size: 1.1rem; border-bottom: 1px solid #FFD700; padding-bottom: 5px;}
+        .note-line { margin: 5px 0; }
+
+        /* Atom Panel (The Orbits) */
+        #atom-panel {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            margin-top: 10px;
+        }
+
+        .orbit-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 2px dashed rgba(0, 229, 255, 0.5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            background: rgba(0, 0, 0, 0.2);
+            transition: border-color 0.3s;
+        }
+
+        /* Z-index mapping ensures correct drop targeting */
+        #ring-k { width: 140px; height: 140px; z-index: 3; }
+        #ring-l { width: 250px; height: 250px; z-index: 2; }
+        #ring-m { width: 360px; height: 360px; z-index: 1; }
+
+        #nucleus {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, #ff4c4c, #8b0000);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            box-shadow: 0 0 20px #ff0000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.8rem;
+            text-shadow: 1px 1px 2px black;
+        }
+
+        /* Summary Labels (Arrows) */
+        #summary-panel {
+            position: absolute;
+            top: 50%;
+            right: 50px;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            pointer-events: none;
+        }
+
+        .summary-lbl {
+            background: rgba(0, 229, 255, 0.1);
+            border: 2px solid #00E5FF;
+            padding: 10px 20px;
+            border-radius: 5px;
+            color: #00E5FF;
+            font-size: 1.4rem;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+            opacity: 0;
+            transform: translateX(-30px);
+            transition: all 0.8s ease;
+            position: relative;
+        }
+
+        .summary-lbl::before {
+            content: "←";
+            position: absolute;
+            left: -35px;
+            color: #00E5FF;
+            font-size: 2rem;
+            line-height: 1;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Electron Storage Box */
+        #electron-box {
+            width: 80%;
+            max-width: 600px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            min-height: 50px;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+        }
+
+        .electron {
+            width: 24px;
+            height: 24px;
+            background: #00E5FF;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00E5FF, inset -3px -3px 5px rgba(0,0,0,0.3);
+            cursor: grab;
+            transition: transform 0.2s;
+            position: relative; /* For JS absolute positioning later */
+        }
+
+        .electron:active { cursor: grabbing; transform: scale(1.2); }
+
+        /* Bottom Bar */
+        #bottom-bar {
+            display: flex;
+            padding: 20px 30px;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.9);
+            border-top: 2px solid #00E5FF;
+            z-index: 10;
+        }
+
+        .btn { background-color: transparent; color: #00E5FF; font-size: 1.2rem; padding: 10px 25px; border: 2px solid #00E5FF; border-radius: 30px; cursor: pointer; transition: all 0.3s ease; text-transform: uppercase; font-weight: bold; }
+        .btn:hover { background-color: #00E5FF; color: #0a0a0f; box-shadow: 0 0 15px #00E5FF; }
+
+        #hint-box { flex: 1; margin: 0 20px; color: #FFD700; font-size: 1.1rem; min-height: 30px; padding: 10px; border-left: 3px solid transparent; }
+
+        /* Success Overlay */
+        #success-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; animation: fadeIn 1s; }
+        .success-title { font-size: 3rem; color: #39FF14; text-shadow: 0 0 20px #39FF14; margin-bottom: 20px; }
+        .reveal-word { font-size: 3.5rem; color: #00E5FF; font-weight: bold; text-shadow: 0 0 30px #00E5FF; margin-bottom: 30px; }
+
+        /* Video Screen */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 50% { transform: translateX(8px); } 75% { transform: translateX(-8px); } }
+    </style>
+
+    <div id="top-bar">
+        <div id="stage-title">ସ୍ତର ୪: ସୁରକ୍ଷା ବ୍ୟବସ୍ଥା</div>
+        <div id="progress-bar">
+            <div class="progress-block active"></div>
+            <div class="progress-block active"></div>
+            <div class="progress-block active"></div>
+            <div class="progress-block active"></div>
+            <div class="progress-block"></div>
+        </div>
+        <div id="timer">11:15</div> 
+    </div>
+
+    <div id="play-zone">
+        
+        <div id="sticky-note">
+            <h4>ପୂର୍ବ ତଥ୍ୟ (Max Capacity)</h4>
+            <div class="note-line">K କକ୍ଷ: 02</div>
+            <div class="note-line">L କକ୍ଷ: 08</div>
+            <div class="note-line">M କକ୍ଷ: 18</div>
+        </div>
+
+        <div id="atom-panel">
+            <div id="nucleus">Nucleus</div>
+            <div class="orbit-ring" id="ring-k" data-orbit="K" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            <div class="orbit-ring" id="ring-l" data-orbit="L" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            <div class="orbit-ring" id="ring-m" data-orbit="M" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+        </div>
+
+        <div id="summary-panel">
+            <div id="sum-k" class="summary-lbl" style="margin-top: 130px;">K Shell &rarr; 2 e⁻</div>
+            <div id="sum-l" class="summary-lbl" style="margin-top: 10px;">L Shell &rarr; 8 e⁻</div>
+            <div id="sum-m" class="summary-lbl" style="margin-top: 10px;">M Shell &rarr; 6 e⁻</div>
+        </div>
+
+        <div id="electron-box">
+            <script>
+                for(let i=1; i<=16; i++) {
+                    document.write(`<div class="electron" id="e${i}" draggable="true" ondragstart="drag(event)"></div>`);
+                }
+            </script>
+        </div>
+
+    </div>
+
+    <div id="bottom-bar">
+        <button class="btn" onclick="showHint()" id="hint-btn">ସୁରାଗ</button>
+        <div id="hint-box"></div>
+    </div>
+
+    <div id="success-overlay">
+        <h2 class="success-title">ସ୍ତର ସମ୍ପୂର୍ଣ୍ଣ ହେଲା</h2>
+        <div class="reveal-word">ଇଲେକ୍ଟ୍ରୋନୀୟ ସଂରଚନା<br>(Electronic Configuration)</div>
+        <button class="btn" style="font-size: 1.5rem; padding: 15px 40px; border-color: #39FF14; color: #39FF14;" onclick="goToNextStage()">ପରବର୍ତ୍ତୀ ସ୍ତର</button>
+    </div>
+    <script>
+        // Trackers for Electronic Configuration
+        let counts = { K: 0, L: 0, M: 0 };
+        const max = { K: 2, L: 8, M: 18 }; // Max capacity
+        const targetTotal = 16; // Total electrons to place
+
+        function allowDrop(ev) { ev.preventDefault(); }
+
+        function drag(ev) {
+            ev.dataTransfer.setData("text", ev.target.id);
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            let data = ev.dataTransfer.getData("text");
+            let piece = document.getElementById(data);
+            let target = ev.target;
+
+            // If dropped on another electron inside the ring, get the parent ring
+            if(target.classList.contains('electron')) {
+                target = target.parentElement;
+            }
+
+            if (target.classList.contains("orbit-ring")) {
+                let orbit = target.getAttribute("data-orbit");
+                let isCorrect = false;
+
+                // Validation Logic (Must fill inner first)
+                if (orbit === 'K' && counts.K < max.K) {
+                    isCorrect = true;
+                } 
+                else if (orbit === 'L' && counts.K === max.K && counts.L < max.L) {
+                    isCorrect = true;
+                } 
+                else if (orbit === 'M' && counts.L === max.L && counts.M < 6) { 
+                    // Only 6 left for M out of 16 total
+                    isCorrect = true;
+                }
+
+                if (isCorrect) {
+                    // Correct Placement
+                    placeElectronOnRing(piece, target, counts[orbit], orbit);
+                    counts[orbit]++;
+                    
+                    let totalPlaced = counts.K + counts.L + counts.M;
+                    if (totalPlaced === targetTotal) {
+                        setTimeout(triggerSuccessSequence, 500);
+                    }
+                } else {
+                    // Wrong Placement (Bounce back animation)
+                    piece.style.backgroundColor = "#FF0033";
+                    piece.style.boxShadow = "0 0 15px #FF0033";
+                    document.getElementById("game-container").style.animation = "shake 0.4s";
+                    target.style.borderColor = "#FF0033";
+                    
+                    setTimeout(() => {
+                        piece.style.backgroundColor = "#00E5FF";
+                        piece.style.boxShadow = "0 0 10px #00E5FF";
+                        document.getElementById("game-container").style.animation = "";
+                        target.style.borderColor = "rgba(0, 229, 255, 0.5)";
+                    }, 500);
+                }
+            }
+        }
+
+        function placeElectronOnRing(piece, ring, index, orbitName) {
+            ring.appendChild(piece);
+            piece.setAttribute("draggable", "false");
+            piece.style.cursor = "default";
+            
+            // Calculate Position based on ring radius and index
+            let radiusMap = { 'K': 70, 'L': 125, 'M': 180 };
+            let maxSpots = { 'K': 2, 'L': 8, 'M': 8 }; // Use 8 for visual symmetry in M even though we place 6
+
+            let radius = radiusMap[orbitName];
+            let angle = (index * (360 / maxSpots[orbitName])) * (Math.PI / 180);
+            
+            // Start placing from the top (offset by -90 degrees / -PI/2)
+            angle -= (Math.PI / 2);
+
+            let x = Math.cos(angle) * radius;
+            let y = Math.sin(angle) * radius;
+
+            piece.style.position = "absolute";
+            // Center it relative to the ring, accounting for the electron's own 24x24 size
+            piece.style.top = `calc(50% - 12px)`; 
+            piece.style.left = `calc(50% - 12px)`;
+            piece.style.transform = `translate(${x}px, ${y}px)`;
+        }
+
+        // Hint Logic
+        const hintText = "ସୁରକ୍ଷା ନିୟମ: ଭିତର ବଳୟ ସମ୍ପୂର୍ଣ୍ଣ ନହେବା ପର୍ଯ୍ୟନ୍ତ ବାହାର ବଳୟକୁ ଶକ୍ତି (ଇଲେକ୍ଟ୍ରନ୍) ଯାଇପାରିବ ନାହିଁ। K ରୁ ଆରମ୍ଭ କରନ୍ତୁ।";
+        let isHintTyping = false;
+
+        function showHint() {
+            if (isHintTyping) return;
+            isHintTyping = true;
+            let i = 0;
+            let textElement = document.getElementById("hint-box");
+            textElement.innerHTML = "";
+            textElement.style.borderLeft = "3px solid #FFD700";
+            
+            function type() {
+                if (i < hintText.length) {
+                    textElement.innerHTML += hintText.charAt(i);
+                    i++;
+                    setTimeout(type, 30);
+                }
+            }
+            type();
+        }
+
+        function triggerSuccessSequence() {
+            // 1. Flash rings green
+            document.querySelectorAll('.orbit-ring').forEach(r => {
+                r.style.borderColor = "#39FF14";
+                r.style.boxShadow = "0 0 15px rgba(57, 255, 20, 0.4)";
+            });
+
+            // 2. Fade in Summary Labels sequentially
+            setTimeout(() => { document.getElementById('sum-k').style.opacity = '1'; document.getElementById('sum-k').style.transform = 'translateX(0)'; }, 300);
+            setTimeout(() => { document.getElementById('sum-l').style.opacity = '1'; document.getElementById('sum-l').style.transform = 'translateX(0)'; }, 800);
+            setTimeout(() => { document.getElementById('sum-m').style.opacity = '1'; document.getElementById('sum-m').style.transform = 'translateX(0)'; }, 1300);
+
+            // 3. Show Success Overlay
+            setTimeout(() => {
+                document.getElementById('success-overlay').style.display = 'flex';
+            }, 3000);
+        }
+
+        function goToNextStage() {
+            window.location.href = "stage5.html";
+        }
+
+        let timeLeft = (11 * 60) + 15; 
+        setInterval(() => {
+            if(timeLeft > 0) timeLeft--;
+            let m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            let s = (timeLeft % 60).toString().padStart(2, '0');
+            document.getElementById('timer').innerText = m + ":" + s;
+        }, 1000);
+    </script>
+</div>
+
+</body>
+</html>
